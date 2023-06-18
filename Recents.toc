@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: Recents |cff808080by luskanek
+## Author: luskanek
+## Notes: Highlights new items in the player's bags.
+## Version: 1.0
+
+main.lua
