@@ -40,16 +40,16 @@ function ContainerFrame_OnHide()
 
     local bag = this:GetID()
 
-    items[bag] = {}
+    for i = 1, sizeof(items[bag]) do
+        items[bag][i] = nil
+    end
 
     local size = GetContainerNumSlots(bag)
     for slot = 1, size do
         local item = _G['ContainerFrame' .. bag + 1 .. 'Item' .. size - slot + 1]
         local border = _G[item:GetName() .. 'Highlight']
         if border then
-            border:SetScript('OnUpdate', nil)
             border:Hide()
-            border = nil
         end
         
         local _, count = GetContainerItemInfo(bag, slot)
@@ -90,37 +90,17 @@ function ContainerFrame_OnShow()
                 if new then
                     local border = _G[item:GetName() .. 'Highlight']
                     if not border then
-                        border = CreateFrame('Frame', item:GetName() .. 'Highlight', item)
-                        border:SetBackdrop({
-                            bgFile = 'Interface\\AddOns\\Recents\\assets\\UI-Icon-QuestBorder'
-                        })
-
-                        border:SetPoint('CENTER', item)
-                        border:SetWidth(item:GetWidth())
-                        border:SetHeight(item:GetHeight())
+                        border = CreateFrame('Model', item:GetName() .. 'Highlight', item)
+                        border:SetModel('Interface\\Buttons\\UI-AutoCastButton.mdx')
+                        border:SetScale(1.4)
+                        border:SetAlpha(0.3)
+                        border:SetAllPoints()
                         border:EnableMouse(true)
                     end
 
-                    border.glow = true
-                    border:SetScript('OnUpdate',
-                        function()
-                            local _, _, _, a = this:GetBackdropColor()
-                            if this.glow then
-                                this:SetBackdropColor(1, 1, 1, a + 0.01)
-                                if (a >= 0.9) then border.glow = false end
-
-                            else
-                                this:SetBackdropColor(1, 1, 1, a - 0.02)
-                                if (a <= 0.1) then this.glow = true end
-                            end
-                        end
-                    )
-
                     border:SetScript('OnEnter',
                         function()
-                            this:SetScript('OnUpdate', nil)
                             this:Hide()
-                            border = nil
                         end
                     )
                 end
