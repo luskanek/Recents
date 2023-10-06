@@ -1,26 +1,34 @@
-local Recents = CreateFrame('Frame')
-
 local _G = getfenv(0)
 
-local items = {
-    [0] = {},
-    [1] = {},
-    [2] = {},
-    [3] = {},
-    [4] = {}
-}
+local items = {}
 
-function Recents.GetItems()
+-- upvalues
+local CreateFrame = CreateFrame
+local GetContainerItemInfo = GetContainerItemInfo
+local GetContainerItemLink = GetContainerItemLink
+local GetContainerNumSlots = GetContainerNumSlots
+local GetItemInfo = GetItemInfo
+
+local strfind = string.find
+
+local tonumber = tonumber
+
+local insert = table.insert
+local sizeof = table.getn
+
+local function GetItems()
     for bag = 0, 4 do
+        items[bag] = {}
+
         local size = GetContainerNumSlots(bag)
         for slot = 1, size do
             local _, count = GetContainerItemInfo(bag, slot)
             if count then
                 local link = GetContainerItemLink(bag, slot)
-                local _, _, id = string.find(link, 'item:(%d+):(%d*):(%d*):(%d*)')
+                local _, _, id = strfind(link, 'item:(%d+):(%d*):(%d*):(%d*)')
                 local name = GetItemInfo(tonumber(id))
 
-                table.insert(items[bag], name)
+                insert(items[bag], name)
             end
         end
     end
@@ -36,7 +44,7 @@ function ContainerFrame_OnHide()
 
     local size = GetContainerNumSlots(bag)
     for slot = 1, size do
-        local item = _G["ContainerFrame" .. bag + 1 .. "Item" .. size - slot + 1]
+        local item = _G['ContainerFrame' .. bag + 1 .. 'Item' .. size - slot + 1]
         local border = _G[item:GetName() .. 'Highlight']
         if border then
             border:SetScript('OnUpdate', nil)
@@ -47,10 +55,10 @@ function ContainerFrame_OnHide()
         local _, count = GetContainerItemInfo(bag, slot)
         if count then
             local link = GetContainerItemLink(bag, slot)
-            local _, _, id  = string.find(link, 'item:(%d+):(%d*):(%d*):(%d*)')
+            local _, _, id  = strfind(link, 'item:(%d+):(%d*):(%d*):(%d*)')
             local name = GetItemInfo(tonumber(id))
 
-            table.insert(items[bag], name)
+            insert(items[bag], name)
         end
     end
 end
@@ -61,10 +69,10 @@ function ContainerFrame_OnShow()
 
     local bag = this:GetID()
 
-    if table.getn(items[bag]) > 0 then
+    if sizeof(items[bag]) > 0 then
         local size = GetContainerNumSlots(bag)
         for slot = 1, size do
-            local item = _G["ContainerFrame" .. bag + 1 .. "Item" .. size - slot + 1]
+            local item = _G['ContainerFrame' .. bag + 1 .. 'Item' .. size - slot + 1]
             local _, count = GetContainerItemInfo(bag, slot)
             if count then
                 local link = GetContainerItemLink(bag, slot)
@@ -84,34 +92,34 @@ function ContainerFrame_OnShow()
                     if not border then
                         border = CreateFrame('Frame', item:GetName() .. 'Highlight', item)
                         border:SetBackdrop({
-                            bgFile = "Interface\\AddOns\\Recents\\assets\\UI-Icon-QuestBorder"
+                            bgFile = 'Interface\\AddOns\\Recents\\assets\\UI-Icon-QuestBorder'
                         })
 
                         border:SetPoint('CENTER', item)
-                        border:SetHeight(item:GetHeight() )
-                        border:SetWidth(item:GetWidth() )
+                        border:SetWidth(item:GetWidth())
+                        border:SetHeight(item:GetHeight())
                         border:EnableMouse(true)
                     end
 
                     border.glow = true
                     border:SetScript('OnUpdate',
                         function()
-                            local _, _, _, a = border:GetBackdropColor()
-                            if border.glow then
-                                border:SetBackdropColor(1, 1, 1, a + 0.01)
+                            local _, _, _, a = this:GetBackdropColor()
+                            if this.glow then
+                                this:SetBackdropColor(1, 1, 1, a + 0.01)
                                 if (a >= 0.9) then border.glow = false end
 
                             else
-                                border:SetBackdropColor(1, 1, 1, a - 0.02)
-                                if (a <= 0.1) then border.glow = true end
+                                this:SetBackdropColor(1, 1, 1, a - 0.02)
+                                if (a <= 0.1) then this.glow = true end
                             end
                         end
                     )
 
                     border:SetScript('OnEnter',
                         function()
-                            border:SetScript('OnUpdate', nil)
-                            border:Hide()
+                            this:SetScript('OnUpdate', nil)
+                            this:Hide()
                             border = nil
                         end
                     )
@@ -121,11 +129,6 @@ function ContainerFrame_OnShow()
     end
 end
 
-Recents:RegisterEvent('PLAYER_ENTERING_WORLD')
-Recents:SetScript('OnEvent',
-    function()
-        if event == 'PLAYER_ENTERING_WORLD' then
-            Recents.GetItems()
-        end
-    end
-)
+local handler = CreateFrame('Frame')
+handler:RegisterEvent('PLAYER_ENTERING_WORLD')
+handler:SetScript('OnEvent', GetItems)
