@@ -16,20 +16,27 @@ local tonumber = tonumber
 local insert = table.insert
 local sizeof = table.getn
 
-local function GetItems()
-    for bag = 0, 4 do
-        items[bag] = {}
+local function GetContainerItems(container)
+    if not items[container] then
+        items[container] = {}
+    end
 
-        local size = GetContainerNumSlots(bag)
-        for slot = 1, size do
-            local _, count = GetContainerItemInfo(bag, slot)
-            if count then
-                local link = GetContainerItemLink(bag, slot)
-                local _, _, id = strfind(link, 'item:(%d+):(%d*):(%d*):(%d*)')
-                local name = GetItemInfo(tonumber(id))
+    local size = sizeof(items[container])
+    if size > 0 then
+        for i = 1, size do
+            items[container][i] = nil
+        end
+    end
+    
+    size = GetContainerNumSlots(container)
+    for slot = 1, size do
+        local _, count = GetContainerItemInfo(container, slot)
+        if count then
+            local link = GetContainerItemLink(container, slot)
+            local _, _, id = strfind(link, 'item:(%d+):(%d*):(%d*):(%d*)')
+            local name = GetItemInfo(tonumber(id))
 
-                insert(items[bag], name)
-            end
+            insert(items[container], name)
         end
     end
 end
@@ -38,49 +45,27 @@ local _ContainerFrame_OnHide = ContainerFrame_OnHide
 function ContainerFrame_OnHide()
     _ContainerFrame_OnHide()
 
-    local bag = this:GetID()
-
-    for i = 1, sizeof(items[bag]) do
-        items[bag][i] = nil
-    end
-
-    local size = GetContainerNumSlots(bag)
-    for slot = 1, size do
-        local item = _G['ContainerFrame' .. bag + 1 .. 'Item' .. size - slot + 1]
-        local border = _G[item:GetName() .. 'Highlight']
-        if border then
-            border:Hide()
-        end
-        
-        local _, count = GetContainerItemInfo(bag, slot)
-        if count then
-            local link = GetContainerItemLink(bag, slot)
-            local _, _, id  = strfind(link, 'item:(%d+):(%d*):(%d*):(%d*)')
-            local name = GetItemInfo(tonumber(id))
-
-            insert(items[bag], name)
-        end
-    end
+    GetContainerItems(this:GetID())
 end
 
 local _ContainerFrame_OnShow = ContainerFrame_OnShow
 function ContainerFrame_OnShow()
 	_ContainerFrame_OnShow()
 
-    local bag = this:GetID()
+    local container = this:GetID()
 
-    if sizeof(items[bag]) > 0 then
-        local size = GetContainerNumSlots(bag)
+    if sizeof(items[container]) > 0 then
+        local size = GetContainerNumSlots(container)
         for slot = 1, size do
-            local item = _G['ContainerFrame' .. bag + 1 .. 'Item' .. size - slot + 1]
-            local _, count = GetContainerItemInfo(bag, slot)
+            local item = _G['ContainerFrame' .. container + 1 .. 'Item' .. size - slot + 1]
+            local _, count = GetContainerItemInfo(container, slot)
             if count then
-                local link = GetContainerItemLink(bag, slot)
+                local link = GetContainerItemLink(container, slot)
                 local _, _, id = string.find(link, 'item:(%d+):(%d*):(%d*):(%d*)')
                 local name = GetItemInfo(tonumber(id))
 
                 local new = true
-                for _, old in pairs(items[bag]) do
+                for _, old in pairs(items[container]) do
                     if old == name then
                         new = false
                         break
@@ -88,27 +73,39 @@ function ContainerFrame_OnShow()
                 end
 
                 if new then
-                    local border = _G[item:GetName() .. 'Highlight']
-                    if not border then
-                        border = CreateFrame('Model', item:GetName() .. 'Highlight', item)
-                        border:SetModel('Interface\\Buttons\\UI-AutoCastButton.mdx')
-                        border:SetScale(1.4)
-                        border:SetAlpha(0.3)
-                        border:SetAllPoints()
-                        border:EnableMouse(true)
+                    local highlight = _G[item:GetName() .. 'Highlight']
+                    if highlight then
+                        highlight:Show()
+                    else
+                        highlight = CreateFrame('Model', item:GetName() .. 'Highlight', item)
+                        highlight:SetModel('Interface\\Buttons\\UI-AutoCastButton.mdx')
+                        highlight:SetScale(1.4)
+                        highlight:SetAlpha(0.3)
+                        highlight:SetAllPoints()
+                        highlight:EnableMouse(true)
+                        highlight:SetScript('OnEnter',
+                            function()
+                                this:Hide()
+                            end
+                        )
+                        highlight:SetScript('OnHide',
+                            function()
+                                this:Hide()
+                            end
+                        )
                     end
-
-                    border:SetScript('OnEnter',
-                        function()
-                            this:Hide()
-                        end
-                    )
                 end
             end
         end
     end
 end
 
+local function HandleEvent()
+    for container = 0, 4 do
+        GetContainerItems(container)
+    end
+end
+
 local handler = CreateFrame('Frame')
 handler:RegisterEvent('PLAYER_ENTERING_WORLD')
-handler:SetScript('OnEvent', GetItems)
+handler:SetScript('OnEvent', HandleEvent)
