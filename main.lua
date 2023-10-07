@@ -54,7 +54,7 @@ function ContainerFrame_OnShow()
 
     local container = this:GetID()
 
-    if sizeof(items[container]) > 0 then
+    if items[container] and sizeof(items[container]) > 0 then
         local size = GetContainerNumSlots(container)
         for slot = 1, size do
             local item = _G['ContainerFrame' .. container + 1 .. 'Item' .. size - slot + 1]
