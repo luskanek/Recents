@@ -17,19 +17,9 @@ local insert = table.insert
 local sizeof = table.getn
 
 local function GetContainerItems(container)
-    if not items[container] then
-        items[container] = {}
-    end
+    items[container] = {}
 
-    local size = sizeof(items[container])
-    if size > 0 then
-        for i = 1, size do
-            items[container][i] = nil
-        end
-    end
-    
-    size = GetContainerNumSlots(container)
-    for slot = 1, size do
+    for slot = 1, GetContainerNumSlots(container) do
         local _, count = GetContainerItemInfo(container, slot)
         if count then
             local link = GetContainerItemLink(container, slot)
@@ -74,26 +64,23 @@ function ContainerFrame_OnShow()
 
                 if new then
                     local highlight = _G[item:GetName() .. 'Highlight']
-                    if highlight then
-                        highlight:Show()
-                    else
-                        highlight = CreateFrame('Model', item:GetName() .. 'Highlight', item)
-                        highlight:SetModel('Interface\\Buttons\\UI-AutoCastButton.mdx')
-                        highlight:SetScale(1.4)
-                        highlight:SetAlpha(0.3)
-                        highlight:SetAllPoints()
-                        highlight:EnableMouse(true)
-                        highlight:SetScript('OnEnter',
+                    if not highlight then
+                        highlight = item:CreateTexture(item:GetName() .. 'Highlight', 'OVERLAY')
+                        highlight:SetTexture('Interface\\BUTTONS\\CheckButtonGlow')
+                        highlight:SetPoint('TOPLEFT', item, -16, 16)
+                        highlight:SetPoint('BOTTOMRIGHT', item, 16, -16)
+
+                        local script = item:GetScript('OnEnter')
+                        item:SetScript('OnEnter',
                             function()
-                                this:Hide()
-                            end
-                        )
-                        highlight:SetScript('OnHide',
-                            function()
-                                this:Hide()
+                                script()
+                                
+                                UIFrameFlashStop(highlight)
                             end
                         )
                     end
+
+                    UIFrameFlash(highlight, 0.5, 0.5, 10, false)
                 end
             end
         end
