@@ -1,7 +1,9 @@
 ## Interface: 11200
 ## Title: Recents |cff808080by luskanek
+## Title-ruRU: Недавние |cff808080от luskanek
 ## Author: luskanek
 ## Notes: Highlights new items in the player's bags.
+## Notes-ruRU: Подсвечивает новые предметы в сумках игрока.
 ## Version: 1.0
 
 main.lua
